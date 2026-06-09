@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+
+*.http
+*.user
+*.suo
+*.cache
+
+.vscode/
