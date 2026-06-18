@@ -1,0 +1,60 @@
+@TmsApi_HostAddress = http://localhost:5294
+
+GET {{TmsApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{TmsApi_HostAddress}}/api/assessments/results1/
+X-Training-User: Tigistu
+Accept: application/json
+###
+GET {{TmsApi_HostAddress}}/payment-options
+Accept: application/json
+
+###
+GET http://localhost:5294/api/enrollments/worker-smoke
+
+###
+GET http://localhost:5294/api/enrollments/test
+
+###
+GET http://localhost:5294/api/enrollments/worker-smoke
+
+###
+GET http://localhost:5294/api/enrollments
+
+###
+curl http://localhost:5294/api/enrollments
+
+###
+curl -X POST http://localhost:5294/api/enrollments \
+-H "Content-Type: application/json" \
+-d '{"studentId":"S-001","courseCode":"CS-101"}'
+
+###
+curl http://localhost:5294/api/enrollments/
+
+###
+curl -X DELETE http://localhost:5294/api/enrollments/c9b10c9d
+
+###
+curl http://localhost:5294/api/enrollments/
+
+###
+GET http://localhost:5294/api/error
+
+###
+GET http://localhost:5294/scalar/v1
+
+###
+GET http://localhost:5294/api/students
+
+###
+GET http://localhost:5294/api/courses
+
+###
+GET http://localhost:5294/api/courses/CS-101
+
+###
+GET http://localhost:5294/api/students/S-001
