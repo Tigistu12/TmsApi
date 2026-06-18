@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
-using Microsoft.EntityFrameworkCore;
-using TmsApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +9,6 @@ builder.Services
     .BindConfiguration("Payments")
     .ValidateDataAnnotations()
     .ValidateOnStart();
-builder.Services.AddDbContext<TmsDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("TmsDatabase")));
 // Authentication & Authorization Services
 builder.Services
     .AddAuthentication("Training")
