@@ -106,4 +106,4 @@ public record EnrollmentRecord(
     string CourseCode,
     DateTime EnrolledAt);
 
-    
+public class TmsDatabaseException(string message) : Exception(message);

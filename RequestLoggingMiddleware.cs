@@ -32,7 +32,7 @@ public class RequestLoggingMiddleware
             correlationId);
 
         // 5. Call next middleware
-        await _next(context);
+       await _next(context);
 
         // 6. Stop timer
         stopwatch.Stop();
