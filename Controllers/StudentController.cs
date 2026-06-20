@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-
+using TmsApi.Entities;
 [ApiController]
 [Route("api/students")]
 public class StudentsController(IStudentService studentService)
