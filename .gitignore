@@ -2,10 +2,7 @@ bin/
 obj/
 .vs/
 
-/Migrations
-/Entities
-/Data
-*.http
+
 *.user
 *.suo
 *.cache

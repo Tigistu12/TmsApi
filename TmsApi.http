@@ -58,3 +58,24 @@ GET http://localhost:5294/api/courses/CS-101
 
 ###
 GET http://localhost:5294/api/students/S-001
+
+###
+curl http://localhost:5294/api/test/deferred
+
+###
+curl http://localhost:5294/api/test/translation-fail
+
+###
+http://localhost:5294/api/reports/active-students
+
+###
+http://localhost:5294/api/reports/course-enrollments
+
+###
+http://localhost:5294/api/reports/average-gpa
+
+###
+http://localhost:5294/api/reports/students-no-enrollment-a
+
+###
+http://localhost:5294/api/reports/students-no-enrollment-b

@@ -8,10 +8,10 @@ public class CourseService : ICourseService
 {
     private readonly List<Course> _courses =
     [
-        new ( "CS-101","C# Fundamentals",30 ),
-        new (
-            "WEB-201", "ASP.NET Core", 4 ),
-        new ("DB-301","SQL Server", 3 )
+        new () {Code="CS-101", Title="C# Fundamentals",Capacity=30 },
+        new (){
+            Code="WEB-201", Title="ASP.NET Core", Capacity=4 },
+        new (){Code="DB-301", Title="SQL Server", Capacity=3 }
     ];
 
     public Task<List<Course>> GetAllAsync()
