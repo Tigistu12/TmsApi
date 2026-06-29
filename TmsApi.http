@@ -79,3 +79,11 @@ http://localhost:5294/api/reports/students-no-enrollment-a
 
 ###
 http://localhost:5294/api/reports/students-no-enrollment-b
+
+###
+Get http://localhost:5294/api/students/small-page-response
+###
+Get http://localhost:5294/api/students/small-page-response?pageNumber=1
+###
+GET   http://localhost:5294/api/courses/top-5-courses
+###
