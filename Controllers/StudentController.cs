@@ -55,7 +55,8 @@ public class StudentsController : ControllerBase
      [HttpPut("{id}")]
     public async Task<IActionResult> UpdateStudent(int id, [FromBody] UpdateStudentRequest request)
     {
-        var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
+        var student = await _context.Students//.AsNoTracking()
+        . FirstOrDefaultAsync(s => s.Id == id);
         if (student == null) return NotFound();
 
         student.Name = request.Name;
