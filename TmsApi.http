@@ -87,3 +87,11 @@ Get http://localhost:5294/api/students/small-page-response?pageNumber=1
 ###
 GET   http://localhost:5294/api/courses/top-5-courses
 ###
+put http://localhost:5294/api/students/1
+Content-Type: application/json
+###
+DELETE http://localhost:5294/api/enrollments/1
+Content-Type: application/json
+###
+
+curl -X PUT http://localhost:5294/api/enrollments/2/archive

@@ -1,5 +1,7 @@
 // exercise 2: the memory leak(captive dependencies)
 
+using TmsApi.Services;
+
 public class EnrollmentWorker
 {
     private readonly IServiceScopeFactory _scopeFactory;

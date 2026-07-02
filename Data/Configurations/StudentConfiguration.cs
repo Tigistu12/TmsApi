@@ -20,5 +20,11 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
             .WithOne(e => e.Student)
             .HasForeignKey(e => e.StudentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+           builder.Property(s => s.Version)
+            .IsRowVersion();
+        builder.HasQueryFilter(s => !s.IsDeleted);
+
+        builder.Property<DateTime>("LastUpdated");
     }
 }

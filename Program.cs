@@ -4,6 +4,7 @@ using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using TmsApi.Data;
 using TmsApi.Entities;
+using TmsApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -22,7 +23,7 @@ builder.Services
     .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>(
         "Training", null);
 builder.Services.AddSingleton<EnrollmentWorker>();
-builder.Services.AddSingleton<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddSingleton<IStudentService, StudentService>();
 builder.Services.AddSingleton<ICourseService, CourseService>();
 builder.Services.AddAuthorization();

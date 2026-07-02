@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TmsApi.Services;
 [ApiController]
 [Route("api/enrollments")]
 public class EnrollmentsController(IEnrollmentService enrollmentService) : ControllerBase
@@ -34,4 +35,23 @@ public async Task<IActionResult> Delete(string id)
 var deleted = await enrollmentService.DeleteAsync(id);
 return deleted ? NoContent() : NotFound();
 }
+
+      //Archive Endpoin ---
+    // PUT /api/enrollments/{id}/archive
+    [HttpPut("{id}/archive")]
+    public async Task<IActionResult> ArchiveEnrollment(string id)
+    {
+        try
+        {
+            await enrollmentService.ArchiveEnrollmentAsync(id);
+            return NoContent(); // Returns HTTP 204 on success
+        }
+        catch (KeyNotFoundException ex)
+        {
+            // Returns HTTP 404 with a clear message if the ID is invalid
+            return NotFound(new { message = ex.Message }); 
+        }
+    }
+
 }
+public record CreateEnrollmentRequest(string StudentId, string CourseCode);
