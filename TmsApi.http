@@ -95,3 +95,9 @@ Content-Type: application/json
 ###
 
 curl -X PUT http://localhost:5294/api/enrollments/2/archive
+
+###
+Get  http://localhost:5294/scalar/v1
+Content-Type:  application/json
+
+###

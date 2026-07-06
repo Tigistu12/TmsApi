@@ -1,45 +1,89 @@
+// using Microsoft.AspNetCore.Mvc;
+// using Microsoft.EntityFrameworkCore;
+// using TmsApi.Data;
+// using System.Linq;
+// using Tms.Api.Services;
+// [ApiController]
+// [Route("api/courses")]
+// public class CoursesController(
+//     ICourseService courseService,
+//     TmsDbContext context)
+//     : ControllerBase
+// {
+//        private readonly TmsDbContext _context = context;
+//     [HttpGet]
+//     public async Task<IActionResult> GetAll()
+//     {
+//         return Ok(await courseService.GetAllAsync());
+//     }
+
+//     [HttpGet("{code}")]
+//     public async Task<IActionResult> GetByCode(string code)
+//     {
+//         var course = await courseService.GetByCodeAsync(code);
+
+//         return course is not null
+//             ? Ok(course)
+//             : NotFound();
+//     }
+//     [HttpGet("top-5-courses")]
+//     public async Task<IActionResult> GetTop5Courses(
+//         CancellationToken ct = default)
+//     {
+//         var topCourses = await _context.Enrollments
+//              .GroupBy(e => e.CourseId)
+//              .Select(g => new
+//              {
+//                CourseId = g.Key,
+//                 EnrollmentCount = g.Count()  
+//              })
+//              .OrderByDescending(x => x.EnrollmentCount)
+//              .Take(5)
+//              .ToListAsync(ct);
+
+//         return Ok(topCourses);
+//     }
+// }
+
+
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TmsApi.Data;
-using System.Linq;
+using TmsApi.Dtos;
+using Tms.Api.Services;
+
+namespace Tms.Api.Controllers;
+
 [ApiController]
 [Route("api/courses")]
-public class CoursesController(
-    ICourseService courseService,
-    TmsDbContext context)
-    : ControllerBase
+public class CoursesController(ICourseService courseService) : ControllerBase
 {
-       private readonly TmsDbContext _context = context;
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [HttpGet("{id:int}", Name = nameof(GetCourseById))]
+    public async Task<IActionResult> GetCourseById(int id, CancellationToken ct)
     {
-        return Ok(await courseService.GetAllAsync());
+        var course = await courseService.GetByIdAsync(id, ct);
+        return course is not null ? Ok(course): NotFound();
+
+        throw new NotImplementedException();
+
     }
-
-    [HttpGet("{code}")]
-    public async Task<IActionResult> GetByCode(string code)
+    [HttpPost]
+    public async Task<IActionResult> CreateCourse(CreateCourseRequest request, CancellationToken ct)
     {
-        var course = await courseService.GetByCodeAsync(code);
+        if(await courseService.CodeExistsAsync(request.Code, ct))
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Course code already exists",
+                Detail = $"A Course with code '{request.Code}' is already registered.",
+                Status = StatusCodes.Status409Conflict
+            });
+        }
 
-        return course is not null
-            ? Ok(course)
-            : NotFound();
-    }
-    [HttpGet("top-5-courses")]
-    public async Task<IActionResult> GetTop5Courses(
-        CancellationToken ct = default)
-    {
-        var topCourses = await _context.Enrollments
-             .GroupBy(e => e.CourseId)
-             .Select(g => new
-             {
-               CourseId = g.Key,
-                EnrollmentCount = g.Count()  
-             })
-             .OrderByDescending(x => x.EnrollmentCount)
-             .Take(5)
-             .ToListAsync(ct);
+        var result = await courseService.CreateAsync(request, ct);
 
-        return Ok(topCourses);
+        return CreatedAtAction(
+         nameof(GetCourseById),
+         new{id =  result.Id},
+         result);
+         throw new NotImplementedException();
     }
 }

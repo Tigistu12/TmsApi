@@ -4,7 +4,7 @@ using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using TmsApi.Data;
 using TmsApi.Entities;
-using TmsApi.Services;
+using Tms.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -22,14 +22,15 @@ builder.Services
     .AddAuthentication("Training")
     .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>(
         "Training", null);
+      
+  builder.Services.AddControllers();
 builder.Services.AddSingleton<EnrollmentWorker>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddSingleton<IStudentService, StudentService>();
-builder.Services.AddSingleton<ICourseService, CourseService>();
 builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi(); // Required before MapOpenApi() will work
-builder.Services.AddControllers();
 builder.Host.UseDefaultServiceProvider(options =>
 {
     options.ValidateScopes = true;
@@ -37,6 +38,7 @@ builder.Host.UseDefaultServiceProvider(options =>
 });
 
 var app = builder.Build();
+app.MapControllers();
 
 // Exercise 1B Order
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -47,7 +49,6 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 app.UseStatusCodePages();
 // Environment-specific configuration
 if (app.Environment.IsDevelopment())
@@ -95,10 +96,10 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
     });
 }).RequireAuthorization();
 
-app.MapGet("/api/error", () =>
-{
-throw new TmsDatabaseException("Simulated database failure for ProblemDetails testing");
-});
+// app.MapGet("/api/error", () =>
+// {
+// throw new TmsDatabaseException("Simulated database failure for ProblemDetails testing");
+// });
 
 using (var scope = app.Services.CreateScope())
 {
@@ -117,9 +118,9 @@ using (var scope = app.Services.CreateScope())
         context.Students.AddRange(students);
         var courses = new List<Course>
 {
-        new() { Code = "CS-101", Title = "Introduction to Computer Science", Capacity = 30 },
-        new() { Code = "CS-201", Title = "Data Structures and Algorithms", Capacity = 25 },
-        new() { Code = "MAT-101", Title = "Calculus I", Capacity =40 }
+        new() { Code = "CS-101", Title = "Introduction to Computer Science", MaxCapacity = 30 },
+        new() { Code = "CS-201", Title = "Data Structures and Algorithms", MaxCapacity = 25 },
+        new() { Code = "MAT-101", Title = "Calculus I", MaxCapacity =40 }
 };
         context.Courses.AddRange(courses);
         context.SaveChanges();
