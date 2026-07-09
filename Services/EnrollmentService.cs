@@ -4,7 +4,7 @@ using TmsApi.Data;
 using TmsApi.Dtos;
 using TmsApi.Entities;
 
-namespace Tms.Api.Services;
+namespace TmsApi.Services;
 
 public class EnrollmentService(
     TmsDbContext context,

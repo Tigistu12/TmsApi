@@ -101,3 +101,19 @@ Get  http://localhost:5294/scalar/v1
 Content-Type:  application/json
 
 ###
+GET http://localhost:5294/api/courses?page=1&pageSize=10
+Accept: application/json
+
+###
+GET http://localhost:5294/api/courses?page=3&pageSize=10
+
+###
+GET http://localhost:5294/api/courses?pageSize=9999
+
+###
+GET http://localhost:5294/api/courses?search=fund
+
+###
+GET http://localhost:5294/api/courses?orderBy=Code&descending=true&pageSize=5
+
+###

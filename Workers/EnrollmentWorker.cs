@@ -1,6 +1,6 @@
 // exercise 2: the memory leak(captive dependencies)
 
-using Tms.Api.Services;
+using TmsApi.Services;
 
 public class EnrollmentWorker
 {

@@ -47,8 +47,8 @@
 
 
 using Microsoft.AspNetCore.Mvc;
+using TmsApi.Services;
 using TmsApi.Dtos;
-using Tms.Api.Services;
 
 namespace Tms.Api.Controllers;
 
@@ -86,4 +86,12 @@ public class CoursesController(ICourseService courseService) : ControllerBase
          result);
          throw new NotImplementedException();
     }
+
+    [HttpGet]
+public async Task<IActionResult> GetCourses(
+[FromQuery] PagedRequest request, CancellationToken ct)
+{
+var result = await courseService.GetCoursesAsync(request, ct);
+return Ok(result);
+}
 }
