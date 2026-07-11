@@ -117,3 +117,4 @@ GET http://localhost:5294/api/courses?search=fund
 GET http://localhost:5294/api/courses?orderBy=Code&descending=true&pageSize=5
 
 ###
+GET http://localhost:5294/api/courses/1

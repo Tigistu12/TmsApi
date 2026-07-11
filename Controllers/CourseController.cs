@@ -1,52 +1,5 @@
-// using Microsoft.AspNetCore.Mvc;
-// using Microsoft.EntityFrameworkCore;
-// using TmsApi.Data;
-// using System.Linq;
-// using Tms.Api.Services;
-// [ApiController]
-// [Route("api/courses")]
-// public class CoursesController(
-//     ICourseService courseService,
-//     TmsDbContext context)
-//     : ControllerBase
-// {
-//        private readonly TmsDbContext _context = context;
-//     [HttpGet]
-//     public async Task<IActionResult> GetAll()
-//     {
-//         return Ok(await courseService.GetAllAsync());
-//     }
-
-//     [HttpGet("{code}")]
-//     public async Task<IActionResult> GetByCode(string code)
-//     {
-//         var course = await courseService.GetByCodeAsync(code);
-
-//         return course is not null
-//             ? Ok(course)
-//             : NotFound();
-//     }
-//     [HttpGet("top-5-courses")]
-//     public async Task<IActionResult> GetTop5Courses(
-//         CancellationToken ct = default)
-//     {
-//         var topCourses = await _context.Enrollments
-//              .GroupBy(e => e.CourseId)
-//              .Select(g => new
-//              {
-//                CourseId = g.Key,
-//                 EnrollmentCount = g.Count()  
-//              })
-//              .OrderByDescending(x => x.EnrollmentCount)
-//              .Take(5)
-//              .ToListAsync(ct);
-
-//         return Ok(topCourses);
-//     }
-// }
-
-
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using TmsApi.Services;
 using TmsApi.Dtos;
 
@@ -54,18 +7,81 @@ namespace Tms.Api.Controllers;
 
 [ApiController]
 [Route("api/courses")]
-public class CoursesController(ICourseService courseService) : ControllerBase
+[Tags("Courses")]
+[Produces("application/json")]
+[ProducesResponseType(typeof(ProblemDetails),
+ StatusCodes.Status500InternalServerError)]
+public class CoursesController(
+ICourseService courseService,
+ LinkGenerator linkGenerator) : ControllerBase
 {
+
+ [HttpGet]
+ [ProducesResponseType(typeof(PagedResponse<CourseResponseDto>), StatusCodes.Status200OK)]
+ [EndpointSummary("List courses with pagination")]
+ [EndpointDescription("Returns a paginated, optionally filtered list of TMS courses. PageSize is capped at 50.")]
+public async Task<IActionResult> GetCourses(
+[FromQuery] PagedRequest request, CancellationToken ct)
+{
+var result = await courseService.GetCoursesAsync(request, ct);
+return Ok(result);
+}
+
     [HttpGet("{id:int}", Name = nameof(GetCourseById))]
+    [ProducesResponseType(typeof(CourseDetailDto), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+[EndpointSummary("Get a course by ID")]
+[EndpointDescription("Returns course details with HATEOAS links. Returns 404 if the course does not exist.")]
     public async Task<IActionResult> GetCourseById(int id, CancellationToken ct)
     {
         var course = await courseService.GetByIdAsync(id, ct);
-        return course is not null ? Ok(course): NotFound();
+        if (course is null)
+        return NotFound();
 
-        throw new NotImplementedException();
+            var self = linkGenerator.GetPathByName(
+                HttpContext,
+                nameof(GetCourseById),
+                new{id = course.Id})!;
 
-    }
+    var enrollments = linkGenerator.GetPathByName(
+        HttpContext,
+        "ListCourseEnrollments",
+        new{courseId = course.Id})!;
+
+    var links = new List<LinkDto>
+    {
+        new (self, "self", "GET"),
+        new (self, "update", "PUT"),
+        new (self, "delete", "DELETE"),
+        new (enrollments, "enrollments", "GET")
+    };
+
+    if(course.EnrollmentCount < course.MaxCapacity)
+        {
+            links.Add(new(enrollments, "enroll", "POST"));
+        }
+
+        var detail = new CourseDetailDto
+        {
+            Id = course.Id,
+            Code = course.Code,
+            Title = course.Title,
+            MaxCapacity = course.MaxCapacity,
+            EnrollmentCount = course.EnrollmentCount,
+            Links = links
+        };
+        return Ok(detail);
+        }
+    
+
+    
     [HttpPost]
+    [ProducesResponseType(typeof(CourseResponseDto), StatusCodes.Status201Created)]
+[ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.
+Status400BadRequest)]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+[EndpointSummary("Create a new course")]
+[EndpointDescription("Creates a course with a unique code. Returns409 if the course code already exists.")]
     public async Task<IActionResult> CreateCourse(CreateCourseRequest request, CancellationToken ct)
     {
         if(await courseService.CodeExistsAsync(request.Code, ct))
@@ -84,14 +100,6 @@ public class CoursesController(ICourseService courseService) : ControllerBase
          nameof(GetCourseById),
          new{id =  result.Id},
          result);
-         throw new NotImplementedException();
     }
 
-    [HttpGet]
-public async Task<IActionResult> GetCourses(
-[FromQuery] PagedRequest request, CancellationToken ct)
-{
-var result = await courseService.GetCoursesAsync(request, ct);
-return Ok(result);
-}
 }

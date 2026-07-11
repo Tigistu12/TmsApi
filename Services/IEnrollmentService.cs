@@ -5,10 +5,6 @@ namespace TmsApi.Services;
 public interface IEnrollmentService
 {
 
-    
-         Task<IEnumerable<EnrollmentResponseDto>> GetAllAsync(
-        int courseId,
-        CancellationToken ct);
         
     Task<EnrollmentResponseDto?> GetByIdAsync(
         int courseId,
@@ -20,4 +16,9 @@ public interface IEnrollmentService
         int courseId,
         EnrollStudentRequest request,
         CancellationToken ct);
+
+    Task<IReadOnlyList<EnrollmentResponseDto>> GetByCourseAsync(
+        int courseId,
+        CancellationToken ct
+    );
 }
