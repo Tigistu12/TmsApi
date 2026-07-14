@@ -96,5 +96,21 @@ Status400BadRequest)]
             },
             enrollment);
     }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [EndpointSummary("Delete an enrollment")]
+    [EndpointDescription("Deletes an enrollment. Returns404 if the enrollment does not exist.")]
+    
+    public async Task<IActionResult> DeleteEnrollment( int courseId, int id, CancellationToken ct)
+    {
+        var deleted = await enrollmentService.DeleteAsync(courseId, id, ct);
+
+        if (!deleted)
+        return NotFound();
+
+        return NoContent();
+    }
 }
 

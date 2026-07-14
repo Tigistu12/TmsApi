@@ -71,6 +71,25 @@ public class EnrollmentService(
              e.EnrolledAt))
         .ToListAsync(ct);
 }
+
+public async Task<bool> DeleteAsync(
+    int courseId, 
+    int id,
+     CancellationToken ct)
+    {
+       var enrollment = await context.Enrollments.FirstOrDefaultAsync(
+        e => e.CourseId == courseId &&
+         e.Id == id,
+          ct); 
+
+          if (enrollment is null)
+          return false;
+
+          context.Enrollments.Remove(enrollment);
+          await context.SaveChangesAsync(ct);
+
+          return true;
+    }
     
 }
  

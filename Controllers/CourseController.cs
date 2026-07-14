@@ -102,4 +102,40 @@ Status400BadRequest)]
          result);
     }
 
+  [HttpPut("{id:int}")]
+  [ProducesResponseType(typeof(CourseResponseDto), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+  [EndpointSummary("Update a course")]
+  [EndpointDescription("Updates a course with a unique code. Returns404 if the course does not exist.")]
+ 
+ public async Task<IActionResult> UpdateCourse(
+    int id,
+    UpdateCourseRequest request,
+    CancellationToken ct)
+    {
+        var course = await courseService.UpdateAsync(id, request, ct);
+
+        if (course is null)
+        return NotFound();
+
+        return Ok(course);
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [EndpointSummary("Delete a course")]
+    [EndpointDescription("Deletes a course with a unique code. Returns404 if the course does not exist.")]
+    
+    public async Task<IActionResult> DeleteCourse(int id, CancellationToken ct)
+    {
+        var deleted = await courseService.DeleteAsync( id, ct);
+
+        if (!deleted)
+        return NotFound();
+
+        return NoContent();
+    }
+
 }

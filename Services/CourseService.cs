@@ -52,7 +52,7 @@ public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
     }
 
     public async Task<PagedResponse<CourseResponseDto>> GetCoursesAsync(
-PagedRequest request, CancellationToken ct)
+  PagedRequest request, CancellationToken ct)
     {
         IQueryable<Course> query = context.Courses.AsNoTracking();
 
@@ -106,28 +106,40 @@ PagedRequest request, CancellationToken ct)
             
       throw new NotImplementedException();
     }
+
+    public async Task<CourseResponseDto?> UpdateAsync(
+        int id, 
+        UpdateCourseRequest request,
+         CancellationToken ct)
+    {
+        var course = await context.Courses.FirstOrDefaultAsync(c => c.Id == id, ct);
+        if (course is null)
+        return null;
+
+        course.Code = request.Code;
+        course.Title = request.Title;
+        course.MaxCapacity = request.MaxCapacity;
+
+        await context.SaveChangesAsync(ct);
+        
+        return await GetByIdAsync(id, ct);
+    }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    {
+        var course = await context.Courses.FirstOrDefaultAsync(c => c.Id == id, ct);
+
+        if (course is null)
+        return false;
+
+        context.Courses.Remove(course);
+        
+        await context.SaveChangesAsync(ct);
+
+        return true;
+    }
 }
 
 
-// public interface ICourseService
-// {
-//     Task<List<Course>> GetAllAsync();
-//     Task<Course?> GetByCodeAsync(string code);
-// }
-// public class CourseService : ICourseService
-// {
-//     private readonly List<Course> _courses =
-//     [
-//         new () {Code="CS-101", Title="C# Fundamentals",MaxCapacity=30 },
-//         new (){
-//             Code="WEB-201", Title="ASP.NET Core", MaxCapacity=4 },
-//         new (){Code="DB-301", Title="SQL Server", MaxCapacity=3 }
-//     ];
 
-//     public Task<List<Course>> GetAllAsync()
-//         => Task.FromResult(_courses);
 
-//     public Task<Course?> GetByCodeAsync(string code)
-//         => Task.FromResult(
-//             _courses.FirstOrDefault(c => c.Code == code));
-// }

@@ -21,4 +21,10 @@ public interface IEnrollmentService
         int courseId,
         CancellationToken ct
     );
+
+    Task<bool> DeleteAsync(
+        int CourseId, 
+        int id, 
+        CancellationToken ct);
+
 }
