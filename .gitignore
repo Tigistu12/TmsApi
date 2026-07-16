@@ -7,10 +7,4 @@ obj/
 *.suo
 *.cache
 
-
-Middleware/
-
-Controllers/v1/
-Controllers/v2/
-
 .vscode/
