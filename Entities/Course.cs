@@ -9,6 +9,7 @@ public class Course
 
     // Navigation property for many-to-many relationship
 public ICollection<Enrollment> Enrollments { get; set; } = [];
+public ICollection<Certificate> Certificates {get; set;} = [];
 
 }
 

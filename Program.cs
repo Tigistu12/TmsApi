@@ -6,6 +6,9 @@ using TmsApi.Data;
 using TmsApi.Entities;
 using TmsApi.Services;
 using TmsApi.Filters;
+using Asp.Versioning;
+using TmsApi.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -28,13 +31,39 @@ builder.Services.AddControllers(options =>
 {
 options.Filters.Add<AuditLogFilter>();
 });
+
+builder.Services.AddOpenApi("v1", options =>
+{
+options.ShouldInclude = description =>
+description.GroupName == "v1";
+});
+builder.Services.AddOpenApi("v2", options =>
+{
+options.ShouldInclude = description =>
+description.GroupName == "v2";
+});
+builder.Services.AddApiVersioning(options =>
+{
+options.DefaultApiVersion = new ApiVersion(1, 0);
+options.AssumeDefaultVersionWhenUnspecified = true;
+options.ReportApiVersions = true;
+options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(options =>
+{
+options.GroupNameFormat = "'v'VVV";
+options.SubstituteApiVersionInUrl = true;
+});
+
+
+
 builder.Services.AddSingleton<EnrollmentWorker>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
-builder.Services.AddSingleton<IStudentService, StudentService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
-builder.Services.AddOpenApi(); // Required before MapOpenApi() will work
 builder.Host.UseDefaultServiceProvider(options =>
 {
     options.ValidateScopes = true;
@@ -42,6 +71,8 @@ builder.Host.UseDefaultServiceProvider(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<V1DeprecationMiddleware>();
 app.MapControllers();
 
 // Exercise 1B Order
@@ -61,7 +92,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
     // Scalar UI
- app.MapScalarApiReference();
+ app.MapScalarApiReference(options =>
+ {
+     options.WithTitle("TMS API Reference")
+     .WithTheme(ScalarTheme.DeepSpace)
+     .WithDefaultHttpClient(ScalarTarget.CSharp,
+      ScalarClient.HttpClient);
+
+// tell scalar to pull both documents into its sidebar dropdown
+   options.AddDocument("v1", "API Version 1.0")
+   .AddDocument("v2", "API Version 2.0");
+ });
+
+
  using var scope = app.Services.CreateScope();
 var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
 await DataSeeder.SeedAsync(context);
@@ -102,7 +145,6 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
         LetterGrade = "A"
     });
 }).RequireAuthorization();
-
 // app.MapGet("/api/error", () =>
 // {
 // throw new TmsDatabaseException("Simulated database failure for ProblemDetails testing");
@@ -143,5 +185,3 @@ new() { StudentId = students[3].Id, CourseId = courses[1].Id, Grade = 3.9m }
     }
 }
 app.Run();
-
-
