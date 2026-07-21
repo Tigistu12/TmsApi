@@ -5,7 +5,6 @@ using Asp.Versioning;
 using TmsApi.Infrastructure.Persistence;
 using TmsApi.Domain.Entities;
 using TmsApi.Application.Interfaces;
-// using TmsApi.Application.Interfaces;
 using TmsApi.Infrastructure.Services;
 using TmsApi.Api.Controllers;
 using TmsApi.Api.Filters;
