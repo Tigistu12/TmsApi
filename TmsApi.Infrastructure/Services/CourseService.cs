@@ -142,6 +142,12 @@ public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
 
         return true;
     }
+
+    public async Task<Course?> GetByCodeAsync(string code, CancellationToken ct)
+    {
+        return await context.Courses.Include(c => c.Enrollments)
+        .FirstOrDefaultAsync(c => c.Code == code, ct);
+    }
 }
 
 

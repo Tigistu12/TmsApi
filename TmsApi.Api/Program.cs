@@ -10,8 +10,23 @@ using TmsApi.Infrastructure.Services;
 using TmsApi.Api.Controllers;
 using TmsApi.Api.Filters;
 using Microsoft.EntityFrameworkCore;
+using TmsApi.Api.Middlewares;
+using FluentValidation;
+using TmsApi.Application.Enrollments.Commands;
+using MediatR;
+using TmsApi.Api.ExceptionHandlers;
+using TmsApi.Application.Behaviors;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMediatR(cfg =>
+cfg.RegisterServicesFromAssembly(typeof(EnrollStudentHandler).Assembly));
+builder.Services.AddValidatorsFromAssembly(typeof(EnrollStudentValidator).Assembly);
+
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services
     .AddOptions<PaymentOptions>()
@@ -74,12 +89,13 @@ builder.Host.UseDefaultServiceProvider(options =>
 
 var app = builder.Build();
 
-// app.UseMiddleware<V1DeprecationMiddleware>();
+app.UseMiddleware<V1DeprecationMiddleware>();
+app.UseExceptionHandler();
 app.MapControllers();
 
 // Exercise 1B Order
 app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseExceptionHandler();
+
 app.UseExceptionHandler("/error");
 
 app.UseRouting();
