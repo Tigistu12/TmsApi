@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using TmsApi.Application.DTOs;       
 using TmsApi.Application.Interfaces;     
 using TmsApi.Domain.Entities;
-using TmsApi.Infrastructure.Persistence;
+using TmsApi.Infrastructure.Persistence.Context;
 
 namespace TmsApi.Infrastructure.Services;
 

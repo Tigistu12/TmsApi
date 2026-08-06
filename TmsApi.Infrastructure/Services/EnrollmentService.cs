@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using TmsApi.Application.DTOs;       
 using TmsApi.Application.Interfaces;     
 using TmsApi.Domain.Entities;
-using TmsApi.Infrastructure.Persistence;
+using TmsApi.Infrastructure.Persistence.Context;
 
 namespace TmsApi.Infrastructure.Services;
 
@@ -25,6 +25,7 @@ public class EnrollmentService(
                 e.Id,
                 e.CourseId,
                 e.StudentId,
+                e.Status,
                 e.EnrolledAt))
             .FirstOrDefaultAsync(ct);
     }
@@ -39,6 +40,7 @@ public class EnrollmentService(
         {
             CourseId = courseId,
             StudentId = request.StudentId,
+            Status = "Pending",
             EnrolledAt = DateTime.UtcNow
         };
 
@@ -69,6 +71,7 @@ public class EnrollmentService(
              e.Id,
              e.CourseId,
              e.StudentId,
+             e.Status,
              e.EnrolledAt))
         .ToListAsync(ct);
 }
@@ -117,6 +120,7 @@ public async Task<EnrollmentResponseDto> AddAsync(
         enrollment.Id,
         enrollment.CourseId,
         enrollment.StudentId,
+        enrollment.Status,
         enrollment.EnrolledAt);
 }
 
@@ -130,5 +134,20 @@ public async Task<IEnumerable<Enrollment>> GetByStudentIdAsync(
         .Where(e => e.StudentId == studentId)
         .ToListAsync(ct);
 }
+
+    public Task<List<EnrollmentResponseDto>> GetAllAsync(CancellationToken ct)
+    {
+       return context.Enrollments
+            .AsNoTracking()
+            .Include(e => e.Student)
+            .Include(e => e.Course)
+            .Select(e => new EnrollmentResponseDto(
+                e.Id,
+                e.CourseId,
+                e.StudentId,
+                e.Status,
+                e.EnrolledAt))
+            .ToListAsync(ct);
+    }
 }
  

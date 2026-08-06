@@ -25,7 +25,8 @@ var enrollment = new Enrollment
 {
 StudentId = command.StudentId,
 CourseId = course.Id,
-EnrolledAt = DateTime.UtcNow
+EnrolledAt = DateTime.UtcNow,
+Status = "Pending"
 };
 await enrollmentService.AddAsync(enrollment, ct);
 return Result<EnrollmentCreated, EnrollmentError>.Success(

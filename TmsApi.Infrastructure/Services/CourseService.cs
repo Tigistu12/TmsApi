@@ -3,13 +3,13 @@ using Microsoft.Extensions.Logging;
 using TmsApi.Application.DTOs;       
 using TmsApi.Application.Interfaces;     
 using TmsApi.Domain.Entities;
-using TmsApi.Infrastructure.Persistence;
+using TmsApi.Infrastructure.Persistence.Context;
 
 namespace TmsApi.Infrastructure.Services;
 
 
 
-public class CourseService(TmsDbContext context, ILogger<CourseService>logger) : ICourseService
+public class CourseService(TmsDbContext context, ILogger<CourseService>logger):ICourseService
 {
 public  Task<CourseResponseDto?> GetByIdAsync(int id, CancellationToken ct)
 {
@@ -38,6 +38,7 @@ public async Task<CourseResponseDto> CreateAsync(CreateCourseRequest request, Ca
  context.Courses.Add(course);
 
 await context.SaveChangesAsync(ct);
+// await cachedCourseService.InvalidateCourseCacheAsync(ct);
 
 logger.LogInformation(
     "Created Course {CourseId} ({Code})",
@@ -45,7 +46,6 @@ logger.LogInformation(
     course.Code);
 
 return (await GetByIdAsync(course.Id, ct))!;
-throw new NotImplementedException();
 }
 
 public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
@@ -125,6 +125,7 @@ public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
         course.MaxCapacity = request.MaxCapacity;
 
         await context.SaveChangesAsync(ct);
+        // await cachedCourseService.InvalidateCourseCacheAsync(ct);
         
         return await GetByIdAsync(id, ct);
     }
@@ -139,6 +140,7 @@ public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
         context.Courses.Remove(course);
         
         await context.SaveChangesAsync(ct);
+        // await cachedCourseService.InvalidateCourseCacheAsync(ct);
 
         return true;
     }
@@ -148,6 +150,21 @@ public Task<bool> CodeExistsAsync(string code, CancellationToken ct)
         return await context.Courses.Include(c => c.Enrollments)
         .FirstOrDefaultAsync(c => c.Code == code, ct);
     }
+
+    public async Task<List<CourseDto>> GetAllAsync(CancellationToken ct)
+    {
+       return await context.Courses
+       .AsNoTracking()
+       .Include(c => c.Enrollments)
+       .Select(c => new CourseDto(
+       c.Id,
+       c.Title,
+       c.Code,
+       c.MaxCapacity,
+       c.Enrollments.Count))
+       .ToListAsync(ct);     
+    }
+
 }
 
 

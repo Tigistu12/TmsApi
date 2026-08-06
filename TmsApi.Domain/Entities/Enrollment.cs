@@ -7,6 +7,8 @@ public class Enrollment
     public int StudentId {get; set; }
     public int CourseId {get; set; }
     public decimal? Grade {get; set; } // Nullable, as student may be currently enrolled
+
+    public required string Status { get; set; } = "Pending";
     public bool IsArchived { get; set; }
 
     public DateTime EnrolledAt {get; set; } = DateTime.UtcNow;

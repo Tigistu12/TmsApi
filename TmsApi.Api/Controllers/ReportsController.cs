@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TmsApi.Application.DTOs;         
 using TmsApi.Application.Interfaces;
-using TmsApi.Infrastructure.Persistence;
+using TmsApi.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 namespace TmsApi.Api.Controllers;  
 

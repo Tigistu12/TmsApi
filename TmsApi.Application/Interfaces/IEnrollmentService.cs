@@ -35,4 +35,5 @@ public interface IEnrollmentService
   Task<IEnumerable<Enrollment>> GetByStudentIdAsync(
     int studentId,
     CancellationToken ct);
+    Task<List<EnrollmentResponseDto>> GetAllAsync(CancellationToken ct);
 }

@@ -5,9 +5,7 @@ namespace TmsApi.Application.DTOs;
 
 public record UpdateCourseRequest
 {
-    [Required]
-    [RegularExpression(@"^[A-Z]{3}-\d{3}$")]
-    public required string Code { get; init; }
+    public  required string Code { get; init; }
 
     [Required]
     [MaxLength(200)]

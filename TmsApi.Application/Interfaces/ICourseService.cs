@@ -12,4 +12,5 @@ Task<CourseResponseDto?> UpdateAsync(int id, UpdateCourseRequest request, Cancel
 Task<bool> DeleteAsync(int id, CancellationToken ct);
 
 Task<Course?> GetByCodeAsync(string code, CancellationToken ct);
+Task<List<CourseDto>> GetAllAsync(CancellationToken ct);
 }

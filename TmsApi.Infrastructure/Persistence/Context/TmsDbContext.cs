@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using TmsApi.Domain.Entities;
-namespace TmsApi.Infrastructure.Persistence;
-
-public class TmsDbContext (DbContextOptions<TmsDbContext> options) : DbContext(options)
+using TmsApi.Application.Interfaces;
+namespace TmsApi.Infrastructure.Persistence.Context;
+public class TmsDbContext (
+    DbContextOptions<TmsDbContext> options)
+     : DbContext(options),ITmsDbContext
 {
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Course> Courses => Set<Course>();
@@ -10,8 +12,9 @@ public class TmsDbContext (DbContextOptions<TmsDbContext> options) : DbContext(o
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
 
+    public DbSet<Certificate> certificates => throw new NotImplementedException();
 
-   protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     modelBuilder.ApplyConfigurationsFromAssembly(
         typeof(TmsDbContext).Assembly);
