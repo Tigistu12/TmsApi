@@ -21,6 +21,13 @@ using TmsApi.Infrastructure.SeedData;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TmsApi.Api.RateLimiting;
+using System.Threading.Channels;
+using TmsApi.Api.Hubs;
+using TmsApi.Api.Notifications;
+using TmsApi.Application.Notifications;
+using TmsApi.Application.Transcripts;
+using TmsApi.Infrastructure.Transcripts;
+using TmsApi.Infrastructure.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -93,6 +100,18 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<ICachedCourseService, CachedCourseService>();
 builder.Services.AddScoped<ITmsDbContext, TmsDbContext>();
+builder.Services.AddSingleton<ITranscriptStatusStore, InMemoryTranscriptStatusStore>();
+builder.Services.AddSingleton<ITranscriptNotificationService, SignalRTranscriptNotificationService>();
+builder.Services.AddHostedService<TranscriptWorker>();
+
+
+builder.Services.AddSingleton(Channel.CreateBounded<TranscriptRequest>(
+    new BoundedChannelOptions(100)
+    {
+        FullMode = BoundedChannelFullMode.Wait
+    }));
+
+builder.Services.AddSignalR();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -265,9 +284,8 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
         LetterGrade = "A"
     });
 }).RequireAuthorization();
-// app.MapGet("/api/error", () =>
-// {
-// throw new TmsDatabaseException("Simulated database failure for ProblemDetails testing");
-// });
+
+// Map Hub endpoint
+app.MapHub<TmsHub>("/hubs/tms");
 
 app.Run();
