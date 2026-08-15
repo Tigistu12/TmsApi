@@ -24,7 +24,9 @@ public class EnrollmentService(
             .Select(e => new EnrollmentResponseDto(
                 e.Id,
                 e.CourseId,
+                e.Course.Title,
                 e.StudentId,
+                e.Student.Name,
                 e.Status,
                 e.EnrolledAt))
             .FirstOrDefaultAsync(ct);
@@ -70,7 +72,9 @@ public class EnrollmentService(
         (
              e.Id,
              e.CourseId,
+             e.Course.Title,
              e.StudentId,
+             e.Student.Name,
              e.Status,
              e.EnrolledAt))
         .ToListAsync(ct);
@@ -119,7 +123,9 @@ public async Task<EnrollmentResponseDto> AddAsync(
     return new EnrollmentResponseDto(
         enrollment.Id,
         enrollment.CourseId,
+        enrollment.Course.Title,
         enrollment.StudentId,
+        enrollment.Student.Name,
         enrollment.Status,
         enrollment.EnrolledAt);
 }
@@ -144,10 +150,50 @@ public async Task<IEnumerable<Enrollment>> GetByStudentIdAsync(
             .Select(e => new EnrollmentResponseDto(
                 e.Id,
                 e.CourseId,
+                e.Course.Title,
                 e.StudentId,
+                e.Student.Name,
                 e.Status,
                 e.EnrolledAt))
             .ToListAsync(ct);
     }
+
+    // public async Task<Enrollment?> RejectAsync(
+    //     int id,
+    //     CancellationToken ct)
+    // {
+    //     var enrollment = await context.Enrollments.FirstOrDefaultAsync(
+    //         e => e.Id == id,
+    //         ct);
+
+    //     if (enrollment is null)
+    //     {
+    //         return null;
+    //     }
+
+    //     enrollment.Status = "Pending";
+    //     await context.SaveChangesAsync(ct);
+
+    //     return enrollment;
+    // }
+    public async Task<Enrollment?> RejectAsync(
+    int id,
+    CancellationToken ct)
+{
+    var enrollment = await context.Enrollments.FirstOrDefaultAsync(
+        e => e.Id == id,
+        ct);
+
+    if (enrollment is null)
+    {
+        return null;
+    }
+
+    // FIX: Change "Pending" to "Rejected"
+    enrollment.Status = "Rejected"; 
+    await context.SaveChangesAsync(ct);
+
+    return enrollment;
+}
 }
  

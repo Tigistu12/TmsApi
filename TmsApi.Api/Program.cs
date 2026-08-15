@@ -28,6 +28,7 @@ using TmsApi.Application.Notifications;
 using TmsApi.Application.Transcripts;
 using TmsApi.Infrastructure.Transcripts;
 using TmsApi.Infrastructure.Workers;
+using TmsApi.Application.Grades.Commands;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +93,9 @@ builder.Services.AddHybridCache(options =>
         LocalCacheExpiration = TimeSpan.FromMinutes(2)
     };
 });
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(EnrollStudentHandler).Assembly));
 
 builder.Services.AddSingleton<EnrollmentWorker>();
 builder.Services.AddScoped<ICourseService, CourseService>();
@@ -203,7 +207,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular", policy =>
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              // MUST allow credentials for SignalR WebSockets to connect
+              .AllowCredentials()); 
 });
 
 
