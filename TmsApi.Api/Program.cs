@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Asp.Versioning;
@@ -57,6 +58,12 @@ builder.Services
     .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>("Training", null);
 
 builder.Services.AddAuthorization();
+
+// --- Session 2: Antiforgery Service Registration ---
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+});
 
 builder.Services.AddControllers(options =>
 {
@@ -195,7 +202,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// --- Exercise 1 Part B: Named CORS Policy Registration ---
+// --- Named CORS Policy Registration ---
 var allowedOrigins = builder.Configuration
     .GetSection("AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:4200"];
@@ -228,6 +235,26 @@ app.UseCors("TmsClient");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// --- Session 2: Antiforgery Cookie Middleware ---
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true || context.Request.Cookies.ContainsKey("tms_auth"))
+    {
+        var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
+        var tokens = antiforgery.GetAndStoreTokens(context);
+
+        context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
+        {
+            HttpOnly = false, // MUST be false so Angular JavaScript can read it!
+            Secure = !app.Environment.IsDevelopment(),
+            SameSite = SameSiteMode.Strict
+        });
+    }
+
+    await next(context);
+});
+
 app.UseStatusCodePages();
 
 // Environment-specific configuration
