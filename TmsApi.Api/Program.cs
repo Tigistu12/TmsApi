@@ -32,8 +32,9 @@ using TmsApi.Application.Grades.Commands;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. Service Registrations ---
 builder.Services.AddMediatR(cfg =>
-cfg.RegisterServicesFromAssembly(typeof(EnrollStudentHandler).Assembly));
+    cfg.RegisterServicesFromAssembly(typeof(EnrollStudentHandler).Assembly));
 builder.Services.AddValidatorsFromAssembly(typeof(EnrollStudentValidator).Assembly);
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
@@ -47,42 +48,40 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-
-
 builder.Services.AddDbContext<TmsDbContext>(options =>
-options.UseNpgsql(builder.Configuration.GetConnectionString("TmsDatabase")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("TmsDatabase")));
+
 // Authentication & Authorization Services
 builder.Services
     .AddAuthentication("Training")
-    .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>(
-        "Training", null);
-      
+    .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>("Training", null);
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers(options =>
 {
-options.Filters.Add<AuditLogFilter>();
+    options.Filters.Add<AuditLogFilter>();
 });
 
 builder.Services.AddOpenApi("v1", options =>
 {
-options.ShouldInclude = description =>
-description.GroupName == "v1";
+    options.ShouldInclude = description => description.GroupName == "v1";
 });
 builder.Services.AddOpenApi("v2", options =>
 {
-options.ShouldInclude = description =>
-description.GroupName == "v2";
+    options.ShouldInclude = description => description.GroupName == "v2";
 });
 builder.Services.AddApiVersioning(options =>
 {
-options.DefaultApiVersion = new ApiVersion(1, 0);
-options.AssumeDefaultVersionWhenUnspecified = true;
-options.ReportApiVersions = true;
-options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 })
 .AddApiExplorer(options =>
 {
-options.GroupNameFormat = "'v'VVV";
-options.SubstituteApiVersionInUrl = true;
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
 });
 
 builder.Services.AddHybridCache(options =>
@@ -94,9 +93,7 @@ builder.Services.AddHybridCache(options =>
     };
 });
 
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(EnrollStudentHandler).Assembly));
-
+// Domain & Infrastructure Services
 builder.Services.AddSingleton<EnrollmentWorker>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
@@ -107,7 +104,6 @@ builder.Services.AddScoped<ITmsDbContext, TmsDbContext>();
 builder.Services.AddSingleton<ITranscriptStatusStore, InMemoryTranscriptStatusStore>();
 builder.Services.AddSingleton<ITranscriptNotificationService, SignalRTranscriptNotificationService>();
 builder.Services.AddHostedService<TranscriptWorker>();
-
 
 builder.Services.AddSingleton(Channel.CreateBounded<TranscriptRequest>(
     new BoundedChannelOptions(100)
@@ -120,61 +116,60 @@ builder.Services.AddSignalR();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-builder.Services.AddAuthorization();
-builder.Services.AddProblemDetails();
 builder.Host.UseDefaultServiceProvider(options =>
 {
     options.ValidateScopes = true;
     options.ValidateOnBuild = true;
 });
+
+// --- Rate Limiting ---
 builder.Services.AddRateLimiter(options =>
 {
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext,
-    string>(httpContext =>
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
         var (partitionKey, tier) = ApiKeyResolver.Resolve(httpContext);
         return tier switch
         {
-            ApiKeyTier.Paid => RateLimitPartition.GetTokenBucketLimiter
-        (
-        partitionKey: $"paid:{partitionKey}",
-        factory: _ => new TokenBucketRateLimiterOptions
-        {
-            TokenLimit = 200,
-            TokensPerPeriod = 100,
-            ReplenishmentPeriod = TimeSpan.FromSeconds(10),
-            QueueLimit = 0,
-            AutoReplenishment = true
-        }),
-            ApiKeyTier.Free => RateLimitPartition.GetTokenBucketLimiter
-    (
-    partitionKey: $"free:{partitionKey}",
-    factory: _ => new TokenBucketRateLimiterOptions
-    {
-        TokenLimit = 30,
-        TokensPerPeriod = 10,
-        ReplenishmentPeriod = TimeSpan.FromSeconds(10),
-        QueueLimit = 0,
-        AutoReplenishment = true
-    }),
+            ApiKeyTier.Paid => RateLimitPartition.GetTokenBucketLimiter(
+                partitionKey: $"paid:{partitionKey}",
+                factory: _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 200,
+                    TokensPerPeriod = 100,
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }),
+            ApiKeyTier.Free => RateLimitPartition.GetTokenBucketLimiter(
+                partitionKey: $"free:{partitionKey}",
+                factory: _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 30,
+                    TokensPerPeriod = 10,
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }),
             _ => RateLimitPartition.GetTokenBucketLimiter(
-        partitionKey: $"anon:{partitionKey}",
-        factory: _ => new TokenBucketRateLimiterOptions
-        {
-            TokenLimit = 10,
-            TokensPerPeriod = 5,
-            ReplenishmentPeriod = TimeSpan.FromSeconds(10),
-            QueueLimit = 0,
-            AutoReplenishment = true
-        })
+                partitionKey: $"anon:{partitionKey}",
+                factory: _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 10,
+                    TokensPerPeriod = 5,
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                })
         };
     });
+
     options.AddConcurrencyLimiter("transcripts", opt =>
     {
-        opt.PermitLimit = 5; // 5 in-flight transcripts maximuM
-        opt.QueueLimit = 20; // queue up to 20 more
+        opt.PermitLimit = 5;
+        opt.QueueLimit = 20;
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });
+
     options.AddTokenBucketLimiter("search", opt =>
     {
         opt.TokenLimit = 10;
@@ -182,91 +177,88 @@ builder.Services.AddRateLimiter(options =>
         opt.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
         opt.QueueLimit = 2;
     });
+
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
-        await context.HttpContext.Response.WriteAsync(
-            "Too Many Requests",
-            token);
-
+        await context.HttpContext.Response.WriteAsync("Too Many Requests", token);
         Console.WriteLine("Rate limiter rejected request.");
     };
+
     options.AddTokenBucketLimiter("anonymous", opt =>
-{
-    opt.TokenLimit = 10;
-    opt.TokensPerPeriod = 5;
-    opt.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
-    opt.QueueLimit = 0;
-    opt.AutoReplenishment = true;
+    {
+        opt.TokenLimit = 10;
+        opt.TokensPerPeriod = 5;
+        opt.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
+        opt.QueueLimit = 0;
+        opt.AutoReplenishment = true;
+    });
 });
-});
+
+// --- Exercise 1 Part B: Named CORS Policy Registration ---
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:4200"];
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngular", policy =>
-        policy.WithOrigins("http://localhost:4200")
+    options.AddPolicy("TmsClient", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              // MUST allow credentials for SignalR WebSockets to connect
-              .AllowCredentials()); 
+              .AllowCredentials() // Vital for HttpOnly auth cookies in Session 2
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+    });
 });
 
-
 var app = builder.Build();
-app.UseCors("AllowAngular");
-app.UseMiddleware<V1DeprecationMiddleware>();
-app.UseExceptionHandler();
-app.MapControllers();
 
-// Exercise 1B Order
+// --- 2. Middleware Pipeline (CRITICAL ORDERING) ---
+app.UseExceptionHandler();
+app.UseMiddleware<V1DeprecationMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
-app.UseExceptionHandler("/error");
-
+// Route matching must happen before CORS policies evaluate routes
 app.UseRouting();
-app.UseRateLimiter();
 
+// CRITICAL: UseCors must come after UseRouting and before UseAuthentication/UseAuthorization
+app.UseCors("TmsClient");
+
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStatusCodePages();
+
 // Environment-specific configuration
 if (app.Environment.IsDevelopment())
 {
-    // OpenAPI document
     app.MapOpenApi();
 
-    // Scalar UI
- app.MapScalarApiReference(options =>
- {
-     options.WithTitle("TMS API Reference")
-     .WithTheme(ScalarTheme.DeepSpace)
-     .WithDefaultHttpClient(ScalarTarget.CSharp,
-      ScalarClient.HttpClient);
+    app.MapScalarApiReference(options =>
+    {
+        options.WithTitle("TMS API Reference")
+               .WithTheme(ScalarTheme.DeepSpace)
+               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
 
-// tell scalar to pull both documents into its sidebar dropdown
-   options.AddDocument("v1", "API Version 1.0")
-   .AddDocument("v2", "API Version 2.0");
- });
+        options.AddDocument("v1", "API Version 1.0")
+               .AddDocument("v2", "API Version 2.0");
+    });
 
-
- using var scope = app.Services.CreateScope();
-var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
-await DataSeeder.SeedAsync(context);
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
+    await DataSeeder.SeedAsync(context);
 }
-else
-{
-    // Production error handling
-    app.UseExceptionHandler();
-}
-// Protected Endpoint
+
+// --- 3. Endpoint Mappings ---
+app.MapControllers();
+
 app.MapGet("/api/assessments/results", () => Results.Ok(new
 {
     courseCode = "CS-101",
     studentId = "S-001",
     letterGrade = "A"
 })).RequireAuthorization();
-
 
 app.MapGet("/api/enrollments/worker-smoke", (EnrollmentWorker worker) =>
 {
@@ -275,9 +267,9 @@ app.MapGet("/api/enrollments/worker-smoke", (EnrollmentWorker worker) =>
 });
 
 app.MapGet("/payment-options", (IOptions<PaymentOptions> options) =>
-    {
-        return Results.Ok(options.Value);
-    });
+{
+    return Results.Ok(options.Value);
+});
 
 app.MapGet("/api/assessments/results1", (HttpContext context) =>
 {
@@ -291,7 +283,6 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
     });
 }).RequireAuthorization();
 
-// Map Hub endpoint
 app.MapHub<TmsHub>("/hubs/tms");
 
 app.Run();
