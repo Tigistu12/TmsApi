@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Asp.Versioning;
@@ -30,6 +31,7 @@ using TmsApi.Application.Transcripts;
 using TmsApi.Infrastructure.Transcripts;
 using TmsApi.Infrastructure.Workers;
 using TmsApi.Application.Grades.Commands;
+using TmsApi.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +53,23 @@ builder.Services
 
 builder.Services.AddDbContext<TmsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("TmsDatabase")));
+
+// --- Module 11 Session 1: ASP.NET Core Identity Setup ---
+builder.Services.AddIdentityCore<TmsUser>(options =>
+{
+    // Enterprise Password Policy
+    options.Password.RequiredLength = 12;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequireNonAlphanumeric = true;
+
+    // Brute-Force Lockout Protection
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.AllowedForNewUsers = true;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<TmsDbContext>();
 
 // Authentication & Authorization Services
 builder.Services
@@ -310,6 +329,6 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
     });
 }).RequireAuthorization();
 
-app.MapHub<TmsHub>("/hubs/tms");
+app.MapHub<TmsHub>("/hubs/tms").RequireCors("TmsClient");
 
 app.Run();
