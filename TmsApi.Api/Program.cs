@@ -1,37 +1,40 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using Scalar.AspNetCore;
-using Asp.Versioning;
-using TmsApi.Infrastructure.Persistence;
-using TmsApi.Domain.Entities;
-using TmsApi.Application.Interfaces;
-using TmsApi.Infrastructure.Services;
-using TmsApi.Api.Controllers;
-using TmsApi.Api.Filters;
-using Microsoft.EntityFrameworkCore;
-using TmsApi.Api.Middlewares;
-using FluentValidation;
-using TmsApi.Application.Enrollments.Commands;
-using MediatR;
-using TmsApi.Api.ExceptionHandlers;
-using TmsApi.Application.Behaviors;
-using Microsoft.Extensions.Caching.Hybrid;
-using TmsApi.Infrastructure.Persistence.Context;
-using TmsApi.Infrastructure.SeedData;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
-using TmsApi.Api.RateLimiting;
+using System.Text;
 using System.Threading.Channels;
+using System.Threading.RateLimiting;
+using Asp.Versioning;
+using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
+using TmsApi.Api.Controllers;
+using TmsApi.Api.ExceptionHandlers;
+using TmsApi.Api.Filters;
 using TmsApi.Api.Hubs;
+using TmsApi.Api.Middlewares;
 using TmsApi.Api.Notifications;
+using TmsApi.Api.RateLimiting;
+using TmsApi.Application.Behaviors;
+using TmsApi.Application.Enrollments.Commands;
+using TmsApi.Application.Grades.Commands;
+using TmsApi.Application.Interfaces;
 using TmsApi.Application.Notifications;
 using TmsApi.Application.Transcripts;
+using TmsApi.Domain.Entities;
+using TmsApi.Infrastructure.Identity;
+using TmsApi.Infrastructure.Persistence;
+using TmsApi.Infrastructure.Persistence.Context;
+using TmsApi.Infrastructure.SeedData;
+using TmsApi.Infrastructure.Services;
 using TmsApi.Infrastructure.Transcripts;
 using TmsApi.Infrastructure.Workers;
-using TmsApi.Application.Grades.Commands;
-using TmsApi.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,10 +74,28 @@ builder.Services.AddIdentityCore<TmsUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<TmsDbContext>();
 
-// Authentication & Authorization Services
-builder.Services
-    .AddAuthentication("Training")
-    .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>("Training", null);
+// --- Module 11 Session 2: Token Service & JWT Bearer Authentication ---
+builder.Services.AddScoped<TokenService>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
 
 builder.Services.AddAuthorization();
 
