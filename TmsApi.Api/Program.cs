@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using TmsApi.Api.Authorization;
 using TmsApi.Api.Controllers;
 using TmsApi.Api.ExceptionHandlers;
 using TmsApi.Api.Filters;
@@ -97,9 +99,14 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+// --- Module 11 Session 3: Policy-Based Authorization ---
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("CanEditCourse", policy =>
+        policy.Requirements.Add(new CourseInstructorRequirement()));
 
-// --- Session 2: Antiforgery Service Registration ---
+builder.Services.AddSingleton<IAuthorizationHandler, CourseInstructorHandler>();
+
+// --- Antiforgery Service Registration ---
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
@@ -172,6 +179,14 @@ builder.Host.UseDefaultServiceProvider(options =>
 // --- Rate Limiting ---
 builder.Services.AddRateLimiter(options =>
 {
+    // Session 3: Auth Endpoint Limiter
+    options.AddFixedWindowLimiter("AuthLimiter", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
         var (partitionKey, tier) = ApiKeyResolver.Resolve(httpContext);
@@ -254,7 +269,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials() // Vital for HttpOnly auth cookies in Session 2
+              .AllowCredentials()
               .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
     });
 });
@@ -269,14 +284,30 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 // Route matching must happen before CORS policies evaluate routes
 app.UseRouting();
 
-// CRITICAL: UseCors must come after UseRouting and before UseAuthentication/UseAuthorization
+// UseCors must come after UseRouting and before UseAuthentication/UseAuthorization
 app.UseCors("TmsClient");
 
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// --- Session 2: Antiforgery Cookie Middleware ---
+// --- Session 3: Security Headers Middleware (Updated CSP for Scalar UI) ---
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append(
+        "Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data: https:;");
+    await next();
+});
+
+// --- Antiforgery Cookie Middleware ---
 app.Use(async (context, next) =>
 {
     if (context.User.Identity?.IsAuthenticated == true || context.Request.Cookies.ContainsKey("tms_auth"))
@@ -286,7 +317,7 @@ app.Use(async (context, next) =>
 
         context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
         {
-            HttpOnly = false, // MUST be false so Angular JavaScript can read it!
+            HttpOnly = false,
             Secure = !app.Environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict
         });

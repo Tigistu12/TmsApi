@@ -13,6 +13,7 @@ public required string Title {get;init;}
 
 [Required, Range(1, 200)]
 public int MaxCapacity {get; init;}
+public string? InstructorId {get; init;}
 
 
 }

@@ -6,6 +6,7 @@ using TmsApi.Domain.Entities;
 using TmsApi.Infrastructure.Identity;
 using TmsApi.Infrastructure.Persistence.Context;
 using TmsApi.Infrastructure.Services;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TmsApi.Api.Controllers;
 
@@ -66,6 +67,7 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Registration successful." });
     }
 
+    [EnableRateLimiting("AuthLimiter")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {

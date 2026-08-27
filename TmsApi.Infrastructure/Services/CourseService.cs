@@ -32,7 +32,8 @@ public async Task<CourseResponseDto> CreateAsync(CreateCourseRequest request, Ca
     {
         Code = request.Code,
         Title = request.Title,
-        MaxCapacity = request.MaxCapacity
+        MaxCapacity = request.MaxCapacity,
+        InstructorId = request.InstructorId
     };
 
  context.Courses.Add(course);
@@ -40,10 +41,11 @@ public async Task<CourseResponseDto> CreateAsync(CreateCourseRequest request, Ca
 await context.SaveChangesAsync(ct);
 // await cachedCourseService.InvalidateCourseCacheAsync(ct);
 
-logger.LogInformation(
-    "Created Course {CourseId} ({Code})",
-    course.Id,
-    course.Code);
+      logger.LogInformation(
+        "Created Course {CourseId} ({Code}) assigned to Instructor {InstructorId}",
+        course.Id,
+        course.Code,
+        course.InstructorId);
 
 return (await GetByIdAsync(course.Id, ct))!;
 }
