@@ -6,9 +6,8 @@ namespace TmsApi.Infrastructure.SeedData;
 
 public static class DataSeeder
 {
-    private static readonly (string Code, string Title, int MaxCapacity)
-    [] Courses =
-     [
+    private static readonly (string Code, string Title, int MaxCapacity)[] Courses =
+    [
         ("CSE-101", "Web Development Fundamentals", 30),
         ("CSE-102", "TypeScript Essentials", 30),
         ("CSE-103", "Git and Collaborative Workflows", 25),
@@ -35,13 +34,26 @@ public static class DataSeeder
         ("UX-101", "UX Research and Wireframing", 24),
         ("UX-201", "Design Systems and Tokens", 22),
     ];
+
     public static async Task SeedAsync(TmsDbContext context, CancellationToken ct = default)
     {
-        await context.Database.MigrateAsync(ct);
+        // Check for active ProviderName to prevent InMemory test runner throwing Relational exceptions
+        var isInMemory = context.Database.ProviderName?.EndsWith("InMemory", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        if (!isInMemory && context.Database.IsRelational())
+        {
+            await context.Database.MigrateAsync(ct);
+        }
+        else
+        {
+            await context.Database.EnsureCreatedAsync(ct);
+        }
+
         if (await context.Courses.AnyAsync(ct))
         {
             return;
         }
+
         foreach (var (code, title, maxCapacity) in Courses)
         {
             context.Courses.Add(new Course
@@ -51,6 +63,7 @@ public static class DataSeeder
                 MaxCapacity = maxCapacity,
             });
         }
+
         await context.SaveChangesAsync(ct);
     }
 }

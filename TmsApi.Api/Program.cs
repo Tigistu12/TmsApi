@@ -345,6 +345,7 @@ if (app.Environment.IsDevelopment())
 
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
+    
     await DataSeeder.SeedAsync(context);
 }
 
@@ -384,3 +385,6 @@ app.MapGet("/api/assessments/results1", (HttpContext context) =>
 app.MapHub<TmsHub>("/hubs/tms").RequireCors("TmsClient");
 
 app.Run();
+
+// Required for WebApplicationFactory in Integration Tests
+public partial class Program { }
